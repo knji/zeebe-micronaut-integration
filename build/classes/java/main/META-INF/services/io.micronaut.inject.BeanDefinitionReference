@@ -1,0 +1,4 @@
+micronaut.email.service.messagehandlers.$OrchestratedOrderCommandHandlerDefinitionClass
+micronaut.email.service.$ZeebeClientFactoryDefinitionClass
+micronaut.email.service.controllers.$OrderControllerDefinitionClass
+micronaut.email.service.repositories.$InMemoryEmailRepositoryDefinitionClass

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_067wa2o" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Zeebe Modeler" exporterVersion="0.6.2">
+  <bpmn:process id="send_parcel_task" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Order Placed">
+      <bpmn:outgoing>SequenceFlow_02cb5xw</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="order_delivered_end" name="Order Delivereed">
+      <bpmn:incoming>SequenceFlow_0z9nkpo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="collect_money_task" name="Collect Money">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="payment-service" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_02cb5xw</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0qgroig</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="fetch_items_task" name="Fetch Items">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fetching-items-service" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1xjuy7z</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_06w6z49</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ServiceTask_1taybaf" name="Ship Parcel">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="shipping-service" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0dtomvt</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0z9nkpo</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_02cb5xw" sourceRef="StartEvent_1" targetRef="collect_money_task" />
+    <bpmn:sequenceFlow id="SequenceFlow_0qgroig" sourceRef="collect_money_task" targetRef="collect_money_exor_gateway" />
+    <bpmn:sequenceFlow id="SequenceFlow_0z9nkpo" sourceRef="ServiceTask_1taybaf" targetRef="order_delivered_end" />
+    <bpmn:serviceTask id="send_email_task" name="Send Email">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="email-service" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1fxo11k</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0lmeliq</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="notification_sent_end" name="Notification Sent">
+      <bpmn:incoming>SequenceFlow_0lmeliq</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_0lmeliq" sourceRef="send_email_task" targetRef="notification_sent_end" />
+    <bpmn:parallelGateway id="email_ship_parrallel_exeecution_gateway" name="Parrallel Execution">
+      <bpmn:incoming>SequenceFlow_06w6z49</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0dtomvt</bpmn:outgoing>
+      <bpmn:outgoing>SequenceFlow_1fxo11k</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="SequenceFlow_06w6z49" sourceRef="fetch_items_task" targetRef="email_ship_parrallel_exeecution_gateway" />
+    <bpmn:sequenceFlow id="SequenceFlow_0dtomvt" sourceRef="email_ship_parrallel_exeecution_gateway" targetRef="ServiceTask_1taybaf" />
+    <bpmn:sequenceFlow id="SequenceFlow_1fxo11k" sourceRef="email_ship_parrallel_exeecution_gateway" targetRef="send_email_task" />
+    <bpmn:exclusiveGateway id="collect_money_exor_gateway" name="Did Payment Succeed" default="SequenceFlow_0k8q655">
+      <bpmn:incoming>SequenceFlow_0qgroig</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1xjuy7z</bpmn:outgoing>
+      <bpmn:outgoing>SequenceFlow_0k8q655</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="SequenceFlow_1xjuy7z" name="yes" sourceRef="collect_money_exor_gateway" targetRef="fetch_items_task">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">order.payment.success==true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="cancel_order_task" name="Cancel Order">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="customer-service" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0k8q655</bpmn:incoming>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_0k8q655" name="no" sourceRef="collect_money_exor_gateway" targetRef="cancel_order_task" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="send_parcel_task">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="81" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="165" y="124" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0mp623y_di" bpmnElement="order_delivered_end">
+        <dc:Bounds x="1325" y="81" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1301" y="124" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_15a9gpd_di" bpmnElement="collect_money_task">
+        <dc:Bounds x="291" y="59" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_190tzzn_di" bpmnElement="fetch_items_task">
+        <dc:Bounds x="627" y="59" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1taybaf_di" bpmnElement="ServiceTask_1taybaf">
+        <dc:Bounds x="1038" y="59" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_02cb5xw_di" bpmnElement="SequenceFlow_02cb5xw">
+        <di:waypoint x="215" y="99" />
+        <di:waypoint x="291" y="99" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0qgroig_di" bpmnElement="SequenceFlow_0qgroig">
+        <di:waypoint x="391" y="99" />
+        <di:waypoint x="478" y="99" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0z9nkpo_di" bpmnElement="SequenceFlow_0z9nkpo">
+        <di:waypoint x="1138" y="99" />
+        <di:waypoint x="1325" y="99" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_1tsa632_di" bpmnElement="send_email_task">
+        <dc:Bounds x="1038" y="192" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_060v1jz_di" bpmnElement="notification_sent_end">
+        <dc:Bounds x="1325" y="214" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1303" y="257" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0lmeliq_di" bpmnElement="SequenceFlow_0lmeliq">
+        <di:waypoint x="1138" y="232" />
+        <di:waypoint x="1325" y="232" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ParallelGateway_0j4nuce_di" bpmnElement="email_ship_parrallel_exeecution_gateway">
+        <dc:Bounds x="876" y="74" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="877" y="44" width="49" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_06w6z49_di" bpmnElement="SequenceFlow_06w6z49">
+        <di:waypoint x="727" y="99" />
+        <di:waypoint x="876" y="99" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0dtomvt_di" bpmnElement="SequenceFlow_0dtomvt">
+        <di:waypoint x="926" y="99" />
+        <di:waypoint x="1038" y="99" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1fxo11k_di" bpmnElement="SequenceFlow_1fxo11k">
+        <di:waypoint x="901" y="124" />
+        <di:waypoint x="901" y="232" />
+        <di:waypoint x="1038" y="232" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ExclusiveGateway_0cf7l0c_di" bpmnElement="collect_money_exor_gateway" isMarkerVisible="true">
+        <dc:Bounds x="478" y="74" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="472" y="44" width="63" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1xjuy7z_di" bpmnElement="SequenceFlow_1xjuy7z">
+        <di:waypoint x="528" y="99" />
+        <di:waypoint x="627" y="99" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="569" y="81" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_04lkwwd_di" bpmnElement="cancel_order_task">
+        <dc:Bounds x="627" y="192" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0k8q655_di" bpmnElement="SequenceFlow_0k8q655">
+        <di:waypoint x="503" y="124" />
+        <di:waypoint x="503" y="232" />
+        <di:waypoint x="627" y="232" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="512" y="175" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
